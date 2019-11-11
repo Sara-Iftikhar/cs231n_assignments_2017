@@ -1,5 +1,5 @@
 from __future__ import print_function
-from past.builtins import xrange
+
 
 import matplotlib
 import numpy as np
@@ -44,7 +44,7 @@ def extract_features(imgs, feature_fns, verbose=False):
   imgs_features[0] = np.hstack(first_image_features).T
 
   # Extract features for the rest of the images.
-  for i in xrange(1, num_images):
+  for i in range(1, num_images):
     idx = 0
     for feature_fn, feature_dim in zip(feature_fns, feature_dims):
       next_idx = idx + feature_dim
@@ -99,10 +99,10 @@ def hog_feature(im):
 
   gx = np.zeros(image.shape)
   gy = np.zeros(image.shape)
-  gx[:, :-1] = np.diff(image, n=1, axis=1) # compute gradient on x-direction
-  gy[:-1, :] = np.diff(image, n=1, axis=0) # compute gradient on y-direction
-  grad_mag = np.sqrt(gx ** 2 + gy ** 2) # gradient magnitude
-  grad_ori = np.arctan2(gy, (gx + 1e-15)) * (180 / np.pi) + 90 # gradient orientation
+  gx[:, :-1] = np.diff(image, n=1, axis=1)  # compute gradient on x-direction
+  gy[:-1, :] = np.diff(image, n=1, axis=0)  # compute gradient on y-direction
+  grad_mag = np.sqrt(gx ** 2 + gy ** 2)  # gradient magnitude
+  grad_ori = np.arctan2(gy, (gx + 1e-15)) * (180 / np.pi) + 90  # gradient orientation
 
   n_cellsx = int(np.floor(sx / cx))  # number of cells in x
   n_cellsy = int(np.floor(sy / cy))  # number of cells in y
@@ -118,8 +118,8 @@ def hog_feature(im):
     # select magnitudes for those orientations
     cond2 = temp_ori > 0
     temp_mag = np.where(cond2, grad_mag, 0)
-    orientation_histogram[:,:,i] = uniform_filter(temp_mag, size=(cx, cy))[cx/2::cx, cy/2::cy].T
-  
+    orientation_histogram[:, :, i] = uniform_filter(temp_mag, size=(cx, cy))[::cx, ::cy].T
+
   return orientation_histogram.ravel()
 
 
@@ -148,4 +148,4 @@ def color_histogram_hsv(im, nbin=10, xmin=0, xmax=255, normalized=True):
   return imhist
 
 
-pass
+
