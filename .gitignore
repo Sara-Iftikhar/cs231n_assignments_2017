@@ -1,0 +1,7 @@
+.idea
+*.idea
+*.pyc
+*.h5
+*.npz
+*.gz
+/__pycache__
