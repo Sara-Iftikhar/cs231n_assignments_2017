@@ -2,9 +2,10 @@ from builtins import range
 from builtins import object
 import numpy as np
 
-from cs231n.layers import *
-from cs231n.rnn_layers import *
-
+#from cs231n.layers import *
+#from cs231n.rnn_layers import *
+from ..layers import *
+from ..rnn_layers import *
 
 class CaptioningRNN(object):
     """
@@ -137,7 +138,21 @@ class CaptioningRNN(object):
         # defined above to store loss and gradients; grads[k] should give the      #
         # gradients for self.params[k].                                            #
         ############################################################################
-        pass
+        h0 = np.dot(features, W_proj) + b_proj
+        out, embedding_cache = word_embedding_forward(captions_in, W_embed)
+
+        h, forward_cache = rnn_forward(out, h0, Wx, Wh, b)
+
+        vout, v_cache = temporal_affine_forward(h, W_vocab, b_vocab)
+        loss, dx = temporal_softmax_loss(vout, captions_out, mask, verbose=False)
+
+        # gradient
+        dout, grads["W_vocab"], grads["b_vocab"] = temporal_affine_backward(dx, v_cache)
+        dout, dh0, grads["Wx"], grads["Wh"], grads["b"] = rnn_backward(dout, forward_cache)
+
+        grads["W_embed"] = word_embedding_backward(dout, embedding_cache)
+        grads["W_proj"] = np.dot(features.T, dh0)
+        grads["b_proj"] = np.sum(dh0, axis=0)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -199,7 +214,26 @@ class CaptioningRNN(object):
         # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
         # a loop.                                                                 #
         ###########################################################################
-        pass
+        N, D = features.shape
+        affine_out, affine_cache = affine_forward(features, W_proj, b_proj)
+
+        prev_word_idx = [self._start] * N
+        prev_h = affine_out
+        prev_c = np.zeros(prev_h.shape)
+        captions[:, 0] = self._start
+        for i in range(1, max_length):
+            prev_word_embed = W_embed[prev_word_idx]
+            if self.cell_type == 'rnn':
+                next_h, rnn_step_cache = rnn_step_forward(prev_word_embed, prev_h, Wx, Wh, b)
+            elif self.cell_type == 'lstm':
+                next_h, next_c, lstm_step_cache = lstm_step_forward(prev_word_embed, prev_h, prev_c, Wx, Wh, b)
+                prev_c = next_c
+            else:
+                raise ValueError('Invalid cell_type "%s"' % self.cell_type)
+            vocab_affine_out, vocab_affine_out_cache = affine_forward(next_h, W_vocab, b_vocab)
+            captions[:, i] = list(np.argmax(vocab_affine_out, axis=1))
+            prev_word_idx = captions[:, i]
+            prev_h = next_h
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
