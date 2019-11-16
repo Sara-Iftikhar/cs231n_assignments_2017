@@ -140,17 +140,21 @@ class CaptioningRNN(object):
         ############################################################################
         h0 = np.dot(features, W_proj) + b_proj
         out, embedding_cache = word_embedding_forward(captions_in, W_embed)
-
-        h, forward_cache = rnn_forward(out, h0, Wx, Wh, b)
-
+        if self.cell_type == "rnn":
+            h, forward_cache = rnn_forward(out, h0, Wx, Wh, b)
+        else:
+            h, forward_cache = lstm_forward(out, h0, Wx, Wh, b)
         vout, v_cache = temporal_affine_forward(h, W_vocab, b_vocab)
         loss, dx = temporal_softmax_loss(vout, captions_out, mask, verbose=False)
 
         # gradient
         dout, grads["W_vocab"], grads["b_vocab"] = temporal_affine_backward(dx, v_cache)
-        dout, dh0, grads["Wx"], grads["Wh"], grads["b"] = rnn_backward(dout, forward_cache)
-
+        if self.cell_type == "rnn":
+            dout, dh0, grads["Wx"], grads["Wh"], grads["b"] = rnn_backward(dout, forward_cache)
+        else:
+            dout, dh0, grads["Wx"], grads["Wh"], grads["b"] = lstm_backward(dout, forward_cache)
         grads["W_embed"] = word_embedding_backward(dout, embedding_cache)
+
         grads["W_proj"] = np.dot(features.T, dh0)
         grads["b_proj"] = np.sum(dh0, axis=0)
         ############################################################################
